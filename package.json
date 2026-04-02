@@ -1,0 +1,30 @@
+{
+  "name": "serpent-arena",
+  "version": "1.0.0",
+  "description": "A multiplayer snake arena game",
+  "private": true,
+  "scripts": {
+    "build:shared": "tsc -p shared/tsconfig.json",
+    "build:server": "tsc -p server/tsconfig.json",
+    "build:client": "vite build --config client/vite.config.ts",
+    "dev:server": "tsx watch server/src/server.ts",
+    "dev:client": "vite --config client/vite.config.ts",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "start": "node server/dist/server.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "socket.io": "^4.7.4",
+    "socket.io-client": "^4.7.4",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.5",
+    "concurrently": "^8.2.2",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12",
+    "vitest": "^1.2.1"
+  }
+}

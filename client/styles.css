@@ -1,0 +1,449 @@
+/* ============================================================
+   SERPENT ARENA - Styles
+   ============================================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  background: #0a0a1a;
+  color: #e0e0e0;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+
+/* Screens */
+.screen {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  background: rgba(6, 6, 20, 0.95);
+}
+.screen.active {
+  display: flex;
+}
+
+/* Menu Container */
+.menu-container {
+  text-align: center;
+  max-width: 420px;
+  width: 90%;
+  padding: 30px;
+}
+
+.game-title {
+  font-size: 3.5rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+  line-height: 1;
+  margin-bottom: 8px;
+  color: #00ff88;
+  text-shadow: 0 0 30px rgba(0, 255, 136, 0.5), 0 0 60px rgba(0, 255, 136, 0.2);
+}
+.title-accent {
+  color: #ff4488;
+  text-shadow: 0 0 30px rgba(255, 68, 136, 0.5), 0 0 60px rgba(255, 68, 136, 0.2);
+}
+.subtitle {
+  font-size: 1rem;
+  color: #888;
+  margin-bottom: 30px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+/* Menu Sections */
+.menu-section {
+  margin-bottom: 20px;
+}
+.menu-label {
+  display: block;
+  font-size: 0.85rem;
+  color: #999;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.menu-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 1.1rem;
+  border: 2px solid #333;
+  border-radius: 8px;
+  background: #111;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.menu-input:focus {
+  border-color: #00ff88;
+}
+
+/* Skin Selector */
+.skin-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.skin-option {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.skin-option:hover {
+  transform: scale(1.15);
+}
+.skin-option.selected {
+  border-color: #fff;
+  transform: scale(1.2);
+}
+
+/* Buttons */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: background 0.2s, transform 0.1s;
+  letter-spacing: 1px;
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn-primary {
+  background: #00ff88;
+  color: #000;
+}
+.btn-primary:hover {
+  background: #00dd77;
+}
+.btn-secondary {
+  background: #333;
+  color: #ccc;
+}
+.btn-secondary:hover {
+  background: #444;
+}
+.btn-text {
+  background: none;
+  color: #666;
+  font-size: 0.9rem;
+}
+.btn-text:hover {
+  color: #aaa;
+}
+
+/* Tutorial */
+.tutorial-text {
+  margin-top: 24px;
+  font-size: 0.8rem;
+  color: #555;
+  line-height: 1.6;
+}
+
+/* Settings */
+.settings-group {
+  margin-bottom: 16px;
+  text-align: left;
+}
+.settings-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: #ccc;
+}
+.settings-group input[type="range"] {
+  width: 100%;
+  margin-top: 4px;
+  accent-color: #00ff88;
+}
+.settings-group input[type="checkbox"] {
+  accent-color: #00ff88;
+  width: 18px;
+  height: 18px;
+}
+
+/* Canvas */
+#game-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: block;
+  z-index: 1;
+}
+
+/* HUD */
+.hud {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 50;
+}
+.hud.hidden {
+  display: none;
+}
+.hud > * {
+  pointer-events: auto;
+}
+
+.hud-score {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(0,0,0,0.8);
+  pointer-events: none;
+}
+.hud-rank {
+  position: absolute;
+  top: 45px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.9rem;
+  color: #aaa;
+  text-shadow: 0 0 10px rgba(0,0,0,0.8);
+  pointer-events: none;
+}
+
+.hud-boost {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 8px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 4px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.hud-boost-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #ff4488, #ff8844);
+  border-radius: 4px;
+  transition: width 0.15s;
+  width: 100%;
+}
+
+.hud-leaderboard {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(0,0,0,0.6);
+  border-radius: 8px;
+  padding: 12px 16px;
+  min-width: 180px;
+  pointer-events: none;
+}
+.hud-leaderboard h3 {
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.hud-leaderboard ol {
+  list-style: none;
+  padding: 0;
+}
+.hud-leaderboard li {
+  font-size: 0.85rem;
+  padding: 2px 0;
+  color: #ccc;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.hud-leaderboard li .lb-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 110px;
+}
+.hud-leaderboard li .lb-score {
+  color: #00ff88;
+  font-weight: 600;
+}
+.hud-leaderboard li.self {
+  color: #fff;
+  font-weight: 700;
+}
+.hud-leaderboard li.self .lb-score {
+  color: #ffdd44;
+}
+
+.hud-minimap {
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-radius: 4px;
+  background: rgba(0,0,0,0.5);
+}
+
+.hud-debug {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  font-size: 0.75rem;
+  color: #0f0;
+  font-family: monospace;
+  background: rgba(0,0,0,0.5);
+  padding: 8px;
+  border-radius: 4px;
+  line-height: 1.5;
+  pointer-events: none;
+}
+.hud-debug.hidden {
+  display: none;
+}
+
+.hud-kills {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.8rem;
+  color: #ff4488;
+  text-shadow: 0 0 10px rgba(0,0,0,0.8);
+  pointer-events: none;
+}
+
+/* Death Screen */
+.death-container {
+  animation: fadeInUp 0.4s ease-out;
+}
+.death-title {
+  font-size: 2rem;
+  color: #ff4488;
+  margin-bottom: 16px;
+}
+.death-score {
+  font-size: 1.5rem;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.death-killer {
+  font-size: 1rem;
+  color: #aaa;
+  margin-bottom: 8px;
+}
+.death-best {
+  font-size: 0.9rem;
+  color: #00ff88;
+  margin-bottom: 20px;
+}
+
+/* Connection Status */
+.connection-status {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 200;
+  background: rgba(0,0,0,0.85);
+  padding: 20px 40px;
+  border-radius: 10px;
+  font-size: 1.2rem;
+  color: #ffaa00;
+  text-align: center;
+}
+.connection-status.hidden {
+  display: none;
+}
+
+/* Mobile Boost */
+.mobile-boost {
+  position: fixed;
+  bottom: 60px;
+  right: 30px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 68, 136, 0.4);
+  border: 3px solid rgba(255, 68, 136, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  z-index: 60;
+  touch-action: none;
+}
+.mobile-boost.hidden {
+  display: none;
+}
+.mobile-boost.active {
+  background: rgba(255, 68, 136, 0.7);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .game-title {
+    font-size: 2.5rem;
+  }
+  .hud-leaderboard {
+    min-width: 140px;
+    padding: 8px 10px;
+  }
+  .hud-leaderboard li {
+    font-size: 0.75rem;
+  }
+  .hud-score {
+    font-size: 1.1rem;
+  }
+}
+
+/* High Contrast Mode */
+body.high-contrast .hud-score,
+body.high-contrast .hud-rank {
+  color: #fff;
+  text-shadow: 0 0 4px #000, 0 0 8px #000;
+}
+body.high-contrast .hud-leaderboard {
+  background: rgba(0,0,0,0.85);
+}
+
+/* Reduced Motion */
+body.reduced-motion * {
+  animation-duration: 0s !important;
+  transition-duration: 0s !important;
+}

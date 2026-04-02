@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Serpent Arena</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Title Screen -->
+  <div id="menu-screen" class="screen active">
+    <div class="menu-container">
+      <h1 class="game-title">SERPENT<br><span class="title-accent">ARENA</span></h1>
+      <p class="subtitle">Grow. Boost. Dominate.</p>
+
+      <div class="menu-section">
+        <input type="text" id="name-input" class="menu-input" placeholder="Enter your name" maxlength="16" autocomplete="off" />
+      </div>
+
+      <div class="menu-section">
+        <label class="menu-label">Choose Skin</label>
+        <div id="skin-selector" class="skin-grid"></div>
+      </div>
+
+      <button id="play-btn" class="btn btn-primary">PLAY ONLINE</button>
+      <button id="play-offline-btn" class="btn btn-secondary">PLAY OFFLINE (with bots)</button>
+
+      <button id="settings-btn" class="btn btn-text">Settings</button>
+
+      <div class="tutorial-text">
+        <p>Move your mouse to steer. Hold click to boost (costs mass).</p>
+        <p>Eat pellets to grow. Avoid crashing into other snakes!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Screen -->
+  <div id="settings-screen" class="screen">
+    <div class="menu-container">
+      <h2>Settings</h2>
+      <div class="settings-group">
+        <label>SFX Volume</label>
+        <input type="range" id="sfx-volume" min="0" max="100" value="70" />
+      </div>
+      <div class="settings-group">
+        <label>Music Volume</label>
+        <input type="range" id="music-volume" min="0" max="100" value="50" />
+      </div>
+      <div class="settings-group">
+        <label><input type="checkbox" id="mute-toggle" /> Mute All</label>
+      </div>
+      <div class="settings-group">
+        <label><input type="checkbox" id="minimap-toggle" checked /> Show Minimap</label>
+      </div>
+      <div class="settings-group">
+        <label><input type="checkbox" id="leaderboard-toggle" checked /> Show Leaderboard</label>
+      </div>
+      <div class="settings-group">
+        <label><input type="checkbox" id="debug-toggle" /> Show Debug Info</label>
+      </div>
+      <div class="settings-group">
+        <label><input type="checkbox" id="reduced-motion-toggle" /> Reduced Motion</label>
+      </div>
+      <div class="settings-group">
+        <label><input type="checkbox" id="high-contrast-toggle" /> High Contrast</label>
+      </div>
+      <button id="settings-back-btn" class="btn btn-primary">Back</button>
+    </div>
+  </div>
+
+  <!-- Game Canvas -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- HUD -->
+  <div id="hud" class="hud hidden">
+    <div id="hud-score" class="hud-score">Score: 0</div>
+    <div id="hud-rank" class="hud-rank">Rank: -</div>
+    <div id="hud-boost" class="hud-boost">
+      <div id="hud-boost-bar" class="hud-boost-bar"></div>
+    </div>
+    <div id="hud-leaderboard" class="hud-leaderboard">
+      <h3>Leaderboard</h3>
+      <ol id="leaderboard-list"></ol>
+    </div>
+    <canvas id="minimap-canvas" class="hud-minimap" width="180" height="180"></canvas>
+    <div id="hud-debug" class="hud-debug hidden"></div>
+    <div id="hud-kills" class="hud-kills">Kills: 0</div>
+  </div>
+
+  <!-- Death Screen -->
+  <div id="death-screen" class="screen">
+    <div class="menu-container death-container">
+      <h2 class="death-title">You were eliminated!</h2>
+      <p id="death-score" class="death-score">Score: 0</p>
+      <p id="death-killer" class="death-killer"></p>
+      <p id="death-best" class="death-best"></p>
+      <button id="respawn-btn" class="btn btn-primary">Play Again</button>
+      <button id="menu-btn" class="btn btn-secondary">Main Menu</button>
+    </div>
+  </div>
+
+  <!-- Connection Status -->
+  <div id="connection-status" class="connection-status hidden">Connecting...</div>
+
+  <!-- Mobile Controls -->
+  <div id="mobile-boost" class="mobile-boost hidden">BOOST</div>
+
+  <script type="module" src="src/main.ts"></script>
+</body>
+</html>
