@@ -220,6 +220,10 @@ function startOffline(name: string, skinId: number): void {
     }
   };
 
+  offlineEngine.onEvent = (message) => {
+    ui.showEvent(message);
+  };
+
   ui.showConnectionStatus(null);
   ui.showScreen('game');
   input.showMobileControls(true);

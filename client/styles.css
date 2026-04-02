@@ -20,6 +20,10 @@ html, body {
   touch-action: none;
 }
 
+.hidden {
+  display: none !important;
+}
+
 /* Screens */
 .screen {
   position: fixed;
@@ -446,4 +450,28 @@ body.high-contrast .hud-leaderboard {
 body.reduced-motion * {
   animation-duration: 0s !important;
   transition-duration: 0s !important;
+}
+
+.hud-event {
+  position: absolute;
+  top: 82px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(120deg, rgba(255, 214, 94, 0.94), rgba(255, 113, 170, 0.92));
+  color: #1a1020;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.hud-event.pop {
+  animation: event-pop 0.45s ease-out;
+}
+
+@keyframes event-pop {
+  from { opacity: 0; transform: translate(-50%, -10px) scale(0.9); }
+  to { opacity: 1; transform: translate(-50%, 0px) scale(1); }
 }

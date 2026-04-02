@@ -190,6 +190,13 @@ interface BotState {
   wanderAngle: number;
   decisionTimer: number;
   boostTimer: number;
+  confidence: number;
+}
+
+interface ArcadeEventState {
+  name: string;
+  endsAt: number;
+  nextPulseAt: number;
 }
 
 // ---- Main Engine ----
@@ -203,12 +210,15 @@ export class OfflineEngine {
   private localPlayerId = 'local-player';
   private lastUpdate = 0;
   private lastLbUpdate = 0;
+  private nextEventAt = 0;
+  private activeEvent: ArcadeEventState | null = null;
   private segHash = new SHash<{ id: string; x: number; y: number; radius: number; snakeId: string; segIdx: number }>();
   private pelletHash = new SHash<{ id: number; x: number; y: number; radius: number }>();
 
   onDeath: ((event: DeathEvent) => void) | null = null;
   onLeaderboard: ((update: LeaderboardUpdate) => void) | null = null;
   onPelletEaten: ((pelletId: number) => void) | null = null;
+  onEvent: ((message: string) => void) | null = null;
 
   start(playerName: string, skinId: number): string {
     _nextPelletId = 1;
@@ -218,6 +228,7 @@ export class OfflineEngine {
     const player = new OSnake(this.localPlayerId, playerName, skinId, spawn.x, spawn.y);
     this.snakes.set(this.localPlayerId, player);
     this.lastUpdate = performance.now();
+    this.nextEventAt = performance.now() + randomInRange(14000, 22000);
     return this.localPlayerId;
   }
 
@@ -251,8 +262,9 @@ export class OfflineEngine {
     // Collisions
     this.runCollisions();
 
-    // Replenish pellets
+    // Replenish pellets + arcade events
     this.replenishPellets();
+    this.updateArcadeEvents(now);
 
     // Leaderboard
     if (now - this.lastLbUpdate > LEADERBOARD_UPDATE_INTERVAL) {
@@ -459,6 +471,7 @@ export class OfflineEngine {
         wanderAngle: Math.random() * Math.PI * 2,
         decisionTimer: 0,
         boostTimer: 0,
+        confidence: randomInRange(0.3, 0.9),
       });
     }
   }
@@ -476,6 +489,7 @@ export class OfflineEngine {
       wanderAngle: Math.random() * Math.PI * 2,
       decisionTimer: 0,
       boostTimer: 0,
+      confidence: randomInRange(0.3, 0.9),
     });
   }
 
@@ -485,76 +499,152 @@ export class OfflineEngine {
     st.decisionTimer -= dt;
     st.boostTimer -= dt;
 
-    let targetAngle = st.wanderAngle;
-    let shouldBoost = false;
     const head = bot.head;
+    const nearbyPellets = [...this.pellets.values()]
+      .map((p) => ({ p, d: distance(head, p) }))
+      .filter((x) => x.d < 520)
+      .sort((a, b) => a.d - b.d)
+      .slice(0, 14);
 
-    // Find nearest pellet & snake
-    let nearPellet: OPellet | null = null, npd = Infinity;
-    for (const p of this.pellets.values()) {
-      const d = distance(head, p);
-      if (d < npd) { npd = d; nearPellet = p; }
-    }
-    let nearSnake: OSnake | null = null, nsd = Infinity;
-    for (const s of this.snakes.values()) {
-      if (s.id === bot.id || !s.alive) continue;
-      const d = distance(head, s.head);
-      if (d < nsd) { nsd = d; nearSnake = s; }
-    }
+    const enemies = [...this.snakes.values()]
+      .filter((s) => s.id !== bot.id && s.alive)
+      .map((s) => ({ s, d: distance(head, s.head) }))
+      .sort((a, b) => a.d - b.d)
+      .slice(0, 8);
 
-    const borderDist = Math.min(head.x, head.y, WORLD_WIDTH - head.x, WORLD_HEIGHT - head.y);
-    if (borderDist < 200) {
-      targetAngle = Math.atan2(WORLD_HEIGHT / 2 - head.y, WORLD_WIDTH / 2 - head.x);
-    } else if (st.decisionTimer <= 0) {
-      st.decisionTimer = randomInRange(0.3, 1.5);
-      switch (st.personality) {
-        case 'timid':
-          if (nsd < 300 && nearSnake) {
-            targetAngle = Math.atan2(head.y - nearSnake.head.y, head.x - nearSnake.head.x);
-            shouldBoost = nsd < 150 && bot.score > BOOST_MIN_SCORE;
-          } else if (nearPellet && npd < 500) {
-            targetAngle = Math.atan2(nearPellet.y - head.y, nearPellet.x - head.x);
-          } else { st.wanderAngle += randomInRange(-0.5, 0.5); targetAngle = st.wanderAngle; }
-          break;
-        case 'greedy':
-          if (nearPellet) {
-            targetAngle = Math.atan2(nearPellet.y - head.y, nearPellet.x - head.x);
-            shouldBoost = npd < 200 && bot.score > BOOST_MIN_SCORE * 2 && Math.random() < 0.3;
+    const strongestNearby = enemies[0]?.s;
+    const threatDist = enemies[0]?.d ?? Infinity;
+
+    if (st.decisionTimer <= 0) {
+      st.decisionTimer = randomInRange(0.15, 0.45);
+
+      const candidateOffsets = [-0.95, -0.55, -0.25, 0, 0.25, 0.55, 0.95];
+      let bestAngle = bot.angle;
+      let bestScore = -Infinity;
+
+      for (const off of candidateOffsets) {
+        const angle = normalizeAngle(bot.angle + off);
+        const lookahead = 150 + bot.speed * 0.7;
+        const px = head.x + Math.cos(angle) * lookahead;
+        const py = head.y + Math.sin(angle) * lookahead;
+
+        const borderPenalty = Math.max(0, 220 - Math.min(px, py, WORLD_WIDTH - px, WORLD_HEIGHT - py)) * 4;
+
+        let danger = 0;
+        for (const enemy of enemies) {
+          const enemyHead = enemy.s.head;
+          const hd = distance({ x: px, y: py }, enemyHead);
+          if (hd < 200) {
+            const sizeBias = enemy.s.score > bot.score ? 1.35 : 0.8;
+            danger += ((200 - hd) ** 1.2) * sizeBias;
           }
-          break;
-        case 'aggressive':
-          if (nearSnake && nsd < 400) {
-            if (bot.score > nearSnake.score * 1.2) {
-              targetAngle = Math.atan2(nearSnake.head.y - head.y, nearSnake.head.x - head.x);
-              shouldBoost = nsd < 250 && bot.score > BOOST_MIN_SCORE * 2;
-            } else if (bot.score < nearSnake.score * 0.8) {
-              targetAngle = Math.atan2(head.y - nearSnake.head.y, head.x - nearSnake.head.x);
-              shouldBoost = nsd < 200 && bot.score > BOOST_MIN_SCORE;
-            } else if (nearPellet) {
-              targetAngle = Math.atan2(nearPellet.y - head.y, nearPellet.x - head.x);
-            }
-          } else if (nearPellet) {
-            targetAngle = Math.atan2(nearPellet.y - head.y, nearPellet.x - head.x);
-          }
-          break;
-        case 'balanced':
-          if (nsd < 200 && nearSnake) {
-            targetAngle = Math.atan2(head.y - nearSnake.head.y, head.x - nearSnake.head.x);
-          } else if (nearPellet && npd < 400) {
-            targetAngle = Math.atan2(nearPellet.y - head.y, nearPellet.x - head.x);
-          } else { st.wanderAngle += randomInRange(-0.3, 0.3); targetAngle = st.wanderAngle; }
-          break;
+        }
+
+        let food = 0;
+        for (const pellet of nearbyPellets) {
+          const pd = distance({ x: px, y: py }, pellet.p);
+          food += (pellet.p.value * 50) / Math.max(50, pd);
+        }
+
+        let chase = 0;
+        if (strongestNearby && threatDist < 320 && bot.score > strongestNearby.score * 1.1) {
+          const toward = Math.atan2(strongestNearby.head.y - head.y, strongestNearby.head.x - head.x);
+          const alignment = 1 - Math.abs(angleDiff(angle, toward)) / Math.PI;
+          chase = alignment * 220;
+        }
+
+        const personalityBias =
+          st.personality === 'timid' ? -danger * 0.55 :
+          st.personality === 'aggressive' ? chase * 0.75 :
+          st.personality === 'greedy' ? food * 0.4 :
+          0;
+
+        const score = food + chase - danger - borderPenalty + personalityBias;
+        if (score > bestScore) {
+          bestScore = score;
+          bestAngle = angle;
+        }
       }
-      st.wanderAngle = targetAngle;
-    } else {
-      targetAngle = st.wanderAngle;
+
+      st.wanderAngle = bestAngle;
+
+      const pressure = Math.max(0, 1 - threatDist / 260);
+      st.confidence = clamp(st.confidence + (bestScore > 120 ? 0.08 : -0.05) - pressure * 0.12, 0.1, 1);
+    }
+
+    let shouldBoost = false;
+    const topPellet = nearbyPellets[0];
+    if (topPellet && topPellet.d < 170 && bot.score > BOOST_MIN_SCORE * 1.7 && st.confidence > 0.45) {
+      shouldBoost = true;
+    }
+    if (threatDist < 120 && bot.score > BOOST_MIN_SCORE) {
+      shouldBoost = true;
     }
 
     if (shouldBoost && st.boostTimer <= 0) {
-      st.boostTimer = randomInRange(2, 5);
-    } else { shouldBoost = false; }
+      st.boostTimer = randomInRange(0.8, 1.6);
+    } else {
+      shouldBoost = false;
+    }
 
-    return { angle: normalizeAngle(targetAngle), boosting: shouldBoost };
+    return { angle: st.wanderAngle, boosting: shouldBoost };
+  }
+
+  private updateArcadeEvents(now: number) {
+    if (this.activeEvent) {
+      if (now >= this.activeEvent.endsAt) {
+        this.onEvent?.(`${this.activeEvent.name} ended`);
+        this.activeEvent = null;
+        this.nextEventAt = now + randomInRange(16000, 26000);
+      } else if (now >= this.activeEvent.nextPulseAt) {
+        this.activeEvent.nextPulseAt = now + randomInRange(900, 1700);
+        if (this.activeEvent.name === 'Golden Rush') {
+          this.spawnBonusCluster(18, 2.8);
+        } else if (this.activeEvent.name === 'Starfall') {
+          this.spawnBonusTrail(10, 2.2);
+        }
+      }
+      return;
+    }
+
+    if (now < this.nextEventAt) return;
+    const eventName = Math.random() < 0.55 ? 'Golden Rush' : 'Starfall';
+    this.activeEvent = {
+      name: eventName,
+      endsAt: now + randomInRange(8500, 12500),
+      nextPulseAt: now,
+    };
+    this.onEvent?.(`${eventName}! Bonus pellets are everywhere.`);
+  }
+
+  private spawnBonusCluster(count: number, valueMult: number) {
+    const cx = randomInRange(220, WORLD_WIDTH - 220);
+    const cy = randomInRange(220, WORLD_HEIGHT - 220);
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count + randomInRange(-0.18, 0.18);
+      const r = randomInRange(10, 140);
+      const p = makePellet(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r, false, GROWTH_PER_PELLET * valueMult);
+      p.color = randomInRange(35, 60);
+      this.pellets.set(p.id, p);
+    }
+  }
+
+  private spawnBonusTrail(count: number, valueMult: number) {
+    const x = randomInRange(200, WORLD_WIDTH - 200);
+    const y = randomInRange(200, WORLD_HEIGHT - 200);
+    const angle = randomInRange(0, Math.PI * 2);
+    for (let i = 0; i < count; i++) {
+      const t = i * 26;
+      const jitter = randomInRange(-16, 16);
+      const p = makePellet(
+        x + Math.cos(angle) * t - Math.sin(angle) * jitter,
+        y + Math.sin(angle) * t + Math.cos(angle) * jitter,
+        false,
+        GROWTH_PER_PELLET * valueMult,
+      );
+      p.color = randomInRange(180, 300);
+      this.pellets.set(p.id, p);
+    }
   }
 
   private emitLeaderboard() {
