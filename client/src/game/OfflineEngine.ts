@@ -16,6 +16,8 @@ import {
   SNAKE_MAX_SEGMENTS, BOOST_SPEED_MULTIPLIER, BOOST_MASS_DRAIN_RATE,
   BOOST_MIN_SCORE, BOOST_PELLET_INTERVAL, BOOST_PELLET_VALUE,
   SCORE_TO_LENGTH_RATIO, GROWTH_SMOOTHING_RATE,
+  SURGE_CHARGE_MAX, SURGE_PASSIVE_CHARGE_RATE, SURGE_PELLET_CHARGE_MULTIPLIER,
+  SURGE_DURATION, SURGE_SPEED_MULTIPLIER, SURGE_PELLET_MAGNET_RADIUS,
   PELLET_BASE_COUNT, PELLET_RADIUS, PELLET_SPAWN_MARGIN,
   PELLET_PICKUP_RADIUS_BONUS, DEATH_PELLET_RADIUS,
   DEATH_PELLET_LIFETIME, GROWTH_PER_PELLET, GROWTH_PER_DEATH_PELLET,
@@ -45,6 +47,8 @@ class OSnake {
   isBot = false;
   private targetSegCount = SNAKE_INITIAL_LENGTH;
   private boostDistAccum = 0;
+  surgeCharge = 0;
+  surgeActiveTimer = 0;
   pendingBoostPellets: { x: number; y: number }[] = [];
 
   constructor(id: string, name: string, skinId: number, x: number, y: number) {
@@ -66,8 +70,10 @@ class OSnake {
   get speed() {
     const r = clamp((this.score - SNAKE_INITIAL_SCORE) / 500, 0, 1);
     const base = lerp(SNAKE_BASE_SPEED, SNAKE_MIN_SPEED, r);
+    if (this.surgeActive) return base * SURGE_SPEED_MULTIPLIER;
     return this.boosting ? base * BOOST_SPEED_MULTIPLIER : base;
   }
+  get surgeActive() { return this.surgeActiveTimer > 0; }
   get turnRate() {
     const r = clamp((this.score - SNAKE_INITIAL_SCORE) / 500, 0, 1);
     return lerp(SNAKE_TURN_RATE, SNAKE_TURN_RATE_MIN, r);
@@ -82,6 +88,8 @@ class OSnake {
 
     if (this.boosting && this.score <= BOOST_MIN_SCORE) this.boosting = false;
     if (this.boosting) this.score = Math.max(BOOST_MIN_SCORE, this.score - BOOST_MASS_DRAIN_RATE * dt);
+    else this.surgeCharge = Math.min(SURGE_CHARGE_MAX, this.surgeCharge + SURGE_PASSIVE_CHARGE_RATE * dt);
+    if (this.surgeActiveTimer > 0) this.surgeActiveTimer = Math.max(0, this.surgeActiveTimer - dt);
 
     const spd = this.speed * dt;
     this.segments.unshift({
@@ -123,7 +131,18 @@ class OSnake {
   }
   setInput(angle: number, boosting: boolean) {
     this.targetAngle = normalizeAngle(angle);
-    this.boosting = boosting && this.score > BOOST_MIN_SCORE;
+    if (boosting && this.surgeCharge >= SURGE_CHARGE_MAX && !this.surgeActive) {
+      this.surgeActiveTimer = SURGE_DURATION;
+      this.surgeCharge = 0;
+    }
+    this.boosting = boosting && this.score > BOOST_MIN_SCORE && !this.surgeActive;
+  }
+  addScore(amount: number) {
+    this.score += amount;
+    this.surgeCharge = Math.min(SURGE_CHARGE_MAX, this.surgeCharge + amount * SURGE_PELLET_CHARGE_MULTIPLIER);
+  }
+  canMagnetCollect(dist: number) {
+    return this.surgeActive && dist <= this.radius + SURGE_PELLET_MAGNET_RADIUS;
   }
   toState(): SnakeState {
     return {
@@ -131,6 +150,7 @@ class OSnake {
       segments: this.segments, angle: this.angle,
       score: Math.floor(this.score), boosting: this.boosting,
       alive: this.alive, radius: this.radius, speed: this.speed,
+      surgeCharge: this.surgeCharge, surgeActive: this.surgeActive,
     };
   }
 }
@@ -336,9 +356,11 @@ export class OfflineEngine {
 
       // Pellets
       if (!dead.has(snake.id)) {
-        const np = this.pelletHash.query(head.x, head.y, hr + PELLET_PICKUP_RADIUS_BONUS + 10);
+        const queryRadius = snake.surgeActive ? hr + SURGE_PELLET_MAGNET_RADIUS + 30 : hr + PELLET_PICKUP_RADIUS_BONUS + 10;
+        const np = this.pelletHash.query(head.x, head.y, queryRadius);
         for (const p of np) {
-          if (circlesOverlap(head.x, head.y, hr + PELLET_PICKUP_RADIUS_BONUS, p.x, p.y, p.radius)) {
+          const d = distance(head, p) + p.radius;
+          if (circlesOverlap(head.x, head.y, hr + PELLET_PICKUP_RADIUS_BONUS, p.x, p.y, p.radius) || snake.canMagnetCollect(d)) {
             if (!eaten.has(snake.id)) eaten.set(snake.id, []);
             eaten.get(snake.id)!.push(p.id);
           }
@@ -374,7 +396,7 @@ export class OfflineEngine {
       for (const pelletId of pelletIds) {
         const p = this.pellets.get(pelletId);
         if (!p) continue;
-        snake.score += p.value;
+        snake.addScore(p.value);
         this.pellets.delete(pelletId);
         if (pid === this.localPlayerId) this.onPelletEaten?.(pelletId);
       }
@@ -526,10 +548,10 @@ export class OfflineEngine {
           if (nearSnake && nsd < 400) {
             if (bot.score > nearSnake.score * 1.2) {
               targetAngle = Math.atan2(nearSnake.head.y - head.y, nearSnake.head.x - head.x);
-              shouldBoost = nsd < 250 && bot.score > BOOST_MIN_SCORE * 2;
+              shouldBoost = nsd < 250 && (bot.score > BOOST_MIN_SCORE * 2 || bot.surgeCharge >= SURGE_CHARGE_MAX);
             } else if (bot.score < nearSnake.score * 0.8) {
               targetAngle = Math.atan2(head.y - nearSnake.head.y, head.x - nearSnake.head.x);
-              shouldBoost = nsd < 200 && bot.score > BOOST_MIN_SCORE;
+              shouldBoost = nsd < 200 && (bot.score > BOOST_MIN_SCORE || bot.surgeCharge >= SURGE_CHARGE_MAX);
             } else if (nearPellet) {
               targetAngle = Math.atan2(nearPellet.y - head.y, nearPellet.x - head.x);
             }

@@ -214,12 +214,12 @@ export class Renderer {
 
     const r = snake.radius;
 
-    // Draw body glow (for local player or boosting snakes)
-    if ((isLocal || snake.boosting) && !this.settings.reducedMotion) {
+    // Draw body glow (for local player, boosting snakes, or surge mode)
+    if ((isLocal || snake.boosting || snake.surgeActive) && !this.settings.reducedMotion) {
       ctx.save();
-      ctx.globalAlpha = 0.15;
-      ctx.strokeStyle = skin.glowColor;
-      ctx.lineWidth = r * 3;
+      ctx.globalAlpha = snake.surgeActive ? 0.28 : 0.15;
+      ctx.strokeStyle = snake.surgeActive ? '#fff58a' : skin.glowColor;
+      ctx.lineWidth = snake.surgeActive ? r * 4 : r * 3;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.beginPath();
@@ -253,9 +253,14 @@ export class Renderer {
     ctx.beginPath();
     ctx.arc(head.x, head.y, r, 0, Math.PI * 2);
 
-    if (snake.boosting && !this.settings.reducedMotion) {
-      ctx.shadowColor = skin.headColor;
-      ctx.shadowBlur = 15;
+    if (!this.settings.reducedMotion) {
+      if (snake.surgeActive) {
+        ctx.shadowColor = '#fff6a9';
+        ctx.shadowBlur = 24;
+      } else if (snake.boosting) {
+        ctx.shadowColor = skin.headColor;
+        ctx.shadowBlur = 15;
+      }
     }
 
     ctx.fillStyle = skin.headColor;

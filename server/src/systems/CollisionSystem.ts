@@ -128,14 +128,20 @@ export class CollisionSystem {
 
       // --- Pellet collision ---
       if (!result.deadSnakeIds.has(snake.id)) {
+        const pelletQueryRadius = snake.surgeActive
+          ? headRadius + 160
+          : headRadius + PELLET_PICKUP_RADIUS_BONUS + 10;
         const nearbyPellets = this.pelletHash.query(
-          head.x, head.y, headRadius + PELLET_PICKUP_RADIUS_BONUS + 10
+          head.x, head.y, pelletQueryRadius
         );
         for (const p of nearbyPellets) {
+          const dx = p.x - head.x;
+          const dy = p.y - head.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
           if (circlesOverlap(
             head.x, head.y, headRadius + PELLET_PICKUP_RADIUS_BONUS,
             p.x, p.y, p.radius
-          )) {
+          ) || snake.tryCollectMagnetPellet(dist + p.radius)) {
             if (!result.eatenPellets.has(snake.id)) {
               result.eatenPellets.set(snake.id, []);
             }

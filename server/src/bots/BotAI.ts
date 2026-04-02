@@ -7,7 +7,7 @@ import { Pellet } from '../entities/Pellet.js';
 import { BotPersonality, Vec2 } from '../../../shared/src/types.js';
 import {
   BOT_NAMES, WORLD_WIDTH, WORLD_HEIGHT, SKIN_COUNT,
-  SPAWN_MARGIN, BOOST_MIN_SCORE,
+  SPAWN_MARGIN, BOOST_MIN_SCORE, SURGE_CHARGE_MAX,
 } from '../../../shared/src/constants.js';
 import { distance, normalizeAngle, randomInRange, randomInt } from '../../../shared/src/math.js';
 
@@ -144,11 +144,11 @@ export class BotAI {
             if (bot.score > nearestSnake.score * 1.2) {
               // Chase
               targetAngle = Math.atan2(nearestSnake.head.y - head.y, nearestSnake.head.x - head.x);
-              shouldBoost = nearestSnakeDist < 250 && bot.score > BOOST_MIN_SCORE * 2;
+              shouldBoost = nearestSnakeDist < 250 && (bot.score > BOOST_MIN_SCORE * 2 || bot.surgeCharge >= SURGE_CHARGE_MAX);
             } else if (bot.score < nearestSnake.score * 0.8) {
               // Flee
               targetAngle = Math.atan2(head.y - nearestSnake.head.y, head.x - nearestSnake.head.x);
-              shouldBoost = nearestSnakeDist < 200 && bot.score > BOOST_MIN_SCORE;
+              shouldBoost = nearestSnakeDist < 200 && (bot.score > BOOST_MIN_SCORE || bot.surgeCharge >= SURGE_CHARGE_MAX);
             } else if (nearestPellet) {
               targetAngle = Math.atan2(nearestPellet.y - head.y, nearestPellet.x - head.x);
             }

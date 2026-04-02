@@ -248,7 +248,25 @@ html, body {
   background: linear-gradient(90deg, #ff4488, #ff8844);
   border-radius: 4px;
   transition: width 0.15s;
-  width: 100%;
+  width: 0%;
+}
+.hud-boost-bar.ready {
+  background: linear-gradient(90deg, #ffe66e, #ff9a3c);
+}
+.hud-boost-bar.active {
+  background: linear-gradient(90deg, #fff5a8, #ffcd6b);
+  box-shadow: 0 0 12px rgba(255, 224, 120, 0.9);
+}
+.hud-boost-label {
+  position: absolute;
+  bottom: 42px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  color: #ffd27a;
+  text-shadow: 0 0 8px rgba(0,0,0,0.8);
+  pointer-events: none;
 }
 
 .hud-leaderboard {
