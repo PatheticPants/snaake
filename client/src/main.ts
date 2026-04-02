@@ -13,7 +13,6 @@ import { UIManager } from './ui/UIManager.js';
 import { OfflineEngine } from './game/OfflineEngine.js';
 import { getSkin } from './config/skins.js';
 import { WorldSnapshot, DeathEvent, LeaderboardUpdate } from '@shared/types.js';
-import { BOOST_MIN_SCORE } from '@shared/constants.js';
 
 // --- Initialization ---
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
@@ -277,7 +276,7 @@ function gameLoop(timestamp: number): void {
 
     // Update HUD
     const rank = gameState.leaderboard?.playerRank ?? 0;
-    ui.updateHUD(localSnake.score, rank, localSnake.score > BOOST_MIN_SCORE);
+    ui.updateHUD(localSnake.score, rank, localSnake.surgeCharge, localSnake.surgeActive);
 
     // Boost audio
     if (localSnake.boosting && input.boosting) {

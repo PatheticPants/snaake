@@ -45,6 +45,14 @@ export const BOOST_MIN_SCORE = 15; // minimum score to be able to boost
 export const BOOST_PELLET_INTERVAL = 80; // pixels traveled between dropping pellets
 export const BOOST_PELLET_VALUE = 1;
 
+// --- Surge (special ability) ---
+export const SURGE_CHARGE_MAX = 100;
+export const SURGE_PASSIVE_CHARGE_RATE = 8; // charge per second while not boosting
+export const SURGE_PELLET_CHARGE_MULTIPLIER = 1.5; // additional charge from eaten pellet value
+export const SURGE_DURATION = 2.4; // seconds
+export const SURGE_SPEED_MULTIPLIER = 2.25;
+export const SURGE_PELLET_MAGNET_RADIUS = 140;
+
 // --- Pellets ---
 export const PELLET_BASE_COUNT = 1500; // pellets maintained in the world
 export const PELLET_RADIUS = 5;

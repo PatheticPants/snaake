@@ -23,6 +23,8 @@ export interface SnakeState {
   alive: boolean;
   radius: number;
   speed: number;
+  surgeCharge: number;
+  surgeActive: boolean;
 }
 
 export interface PelletState {

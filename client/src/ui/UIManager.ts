@@ -4,7 +4,7 @@
 
 import { GameSettings, DEFAULT_SETTINGS, LeaderboardUpdate } from '@shared/types.js';
 import { SKINS } from '../config/skins.js';
-import { BOOST_MIN_SCORE } from '@shared/constants.js';
+import { SURGE_CHARGE_MAX } from '@shared/constants.js';
 
 export type Screen = 'menu' | 'settings' | 'game' | 'death';
 
@@ -25,6 +25,7 @@ export class UIManager {
   private hudScore = document.getElementById('hud-score')!;
   private hudRank = document.getElementById('hud-rank')!;
   private hudBoostBar = document.getElementById('hud-boost-bar')!;
+  private hudBoostLabel = document.getElementById('hud-boost-label')!;
   private hudLeaderboard = document.getElementById('hud-leaderboard')!;
   private leaderboardList = document.getElementById('leaderboard-list')!;
   private hudDebug = document.getElementById('hud-debug')!;
@@ -177,13 +178,20 @@ export class UIManager {
     }
   }
 
-  updateHUD(score: number, rank: number, boostAvailable: boolean): void {
+  updateHUD(score: number, rank: number, surgeCharge: number, surgeActive: boolean): void {
     this.hudScore.textContent = `Score: ${score}`;
     this.hudRank.textContent = `Rank: #${rank}`;
 
-    // Boost bar
-    const boostPercent = boostAvailable ? Math.min(100, (score / (BOOST_MIN_SCORE * 3)) * 100) : 0;
-    this.hudBoostBar.style.width = `${boostPercent}%`;
+    // Surge bar
+    const surgePercent = Math.min(100, (surgeCharge / SURGE_CHARGE_MAX) * 100);
+    this.hudBoostBar.style.width = `${surgePercent}%`;
+    this.hudBoostBar.classList.toggle('ready', surgePercent >= 100);
+    this.hudBoostBar.classList.toggle('active', surgeActive);
+    this.hudBoostLabel.textContent = surgeActive
+      ? 'SURGE ACTIVE!'
+      : surgePercent >= 100
+        ? 'SURGE READY — HOLD BOOST'
+        : 'SURGE CHARGING';
   }
 
   updateLeaderboard(update: LeaderboardUpdate, localPlayerId: string): void {

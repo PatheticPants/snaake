@@ -9,6 +9,8 @@ import {
   SNAKE_MAX_SEGMENTS, BOOST_SPEED_MULTIPLIER, BOOST_MASS_DRAIN_RATE,
   BOOST_MIN_SCORE, BOOST_PELLET_INTERVAL, SCORE_TO_LENGTH_RATIO,
   GROWTH_SMOOTHING_RATE, WORLD_WIDTH, WORLD_HEIGHT,
+  SURGE_CHARGE_MAX, SURGE_PASSIVE_CHARGE_RATE, SURGE_PELLET_CHARGE_MULTIPLIER,
+  SURGE_DURATION, SURGE_SPEED_MULTIPLIER, SURGE_PELLET_MAGNET_RADIUS,
 } from '../../../shared/src/constants.js';
 import { SnakeState, SnakeSegment, Vec2 } from '../../../shared/src/types.js';
 import { normalizeAngle, angleDiff, clamp, lerp } from '../../../shared/src/math.js';
@@ -29,6 +31,8 @@ export class Snake {
   private targetSegmentCount: number = SNAKE_INITIAL_LENGTH;
   private boostDistAccum: number = 0;
   pendingBoostPellets: Vec2[] = [];
+  surgeCharge: number = 0;
+  surgeActiveTimer: number = 0;
 
   constructor(id: string, name: string, skinId: number, x: number, y: number) {
     this.id = id;
@@ -58,7 +62,14 @@ export class Snake {
   get speed(): number {
     const sizeRatio = clamp((this.score - SNAKE_INITIAL_SCORE) / 500, 0, 1);
     const base = lerp(SNAKE_BASE_SPEED, SNAKE_MIN_SPEED, sizeRatio);
+    if (this.surgeActive) {
+      return base * SURGE_SPEED_MULTIPLIER;
+    }
     return this.boosting ? base * BOOST_SPEED_MULTIPLIER : base;
+  }
+
+  get surgeActive(): boolean {
+    return this.surgeActiveTimer > 0;
   }
 
   get turnRate(): number {
@@ -86,6 +97,12 @@ export class Snake {
     if (this.boosting) {
       const drain = BOOST_MASS_DRAIN_RATE * dt;
       this.score = Math.max(BOOST_MIN_SCORE, this.score - drain);
+    } else {
+      this.surgeCharge = Math.min(SURGE_CHARGE_MAX, this.surgeCharge + SURGE_PASSIVE_CHARGE_RATE * dt);
+    }
+
+    if (this.surgeActiveTimer > 0) {
+      this.surgeActiveTimer = Math.max(0, this.surgeActiveTimer - dt);
     }
 
     // Move head
@@ -144,11 +161,20 @@ export class Snake {
 
   addScore(amount: number): void {
     this.score += amount;
+    this.surgeCharge = Math.min(SURGE_CHARGE_MAX, this.surgeCharge + amount * SURGE_PELLET_CHARGE_MULTIPLIER);
   }
 
   setInput(angle: number, boosting: boolean): void {
     this.targetAngle = normalizeAngle(angle);
-    this.boosting = boosting && this.score > BOOST_MIN_SCORE;
+    if (boosting && this.surgeCharge >= SURGE_CHARGE_MAX && !this.surgeActive) {
+      this.surgeActiveTimer = SURGE_DURATION;
+      this.surgeCharge = 0;
+    }
+    this.boosting = boosting && this.score > BOOST_MIN_SCORE && !this.surgeActive;
+  }
+
+  tryCollectMagnetPellet(dist: number): boolean {
+    return this.surgeActive && dist <= this.radius + SURGE_PELLET_MAGNET_RADIUS;
   }
 
   isInBounds(): boolean {
@@ -170,6 +196,8 @@ export class Snake {
       alive: this.alive,
       radius: this.radius,
       speed: this.speed,
+      surgeCharge: this.surgeCharge,
+      surgeActive: this.surgeActive,
     };
   }
 }
