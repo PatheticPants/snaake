@@ -29,6 +29,7 @@ export class UIManager {
   private leaderboardList = document.getElementById('leaderboard-list')!;
   private hudDebug = document.getElementById('hud-debug')!;
   private hudKills = document.getElementById('hud-kills')!;
+  private hudEvent = document.getElementById('hud-event')!;
   private deathScore = document.getElementById('death-score')!;
   private deathKiller = document.getElementById('death-killer')!;
   private deathBest = document.getElementById('death-best')!;
@@ -200,6 +201,17 @@ export class UIManager {
   updateKills(kills: number): void {
     this.killCount = kills;
     this.hudKills.textContent = `Kills: ${kills}`;
+  }
+
+
+  showEvent(message: string): void {
+    this.hudEvent.textContent = message;
+    this.hudEvent.classList.remove('hidden');
+    this.hudEvent.classList.remove('pop');
+    // reflow for animation restart
+    void this.hudEvent.clientWidth;
+    this.hudEvent.classList.add('pop');
+    setTimeout(() => this.hudEvent.classList.add('hidden'), 2800);
   }
 
   updateDebug(fps: number, ping: number, snakeCount: number, pelletCount: number): void {
